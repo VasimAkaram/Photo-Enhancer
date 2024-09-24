@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Enhancer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Enhance Your Image</h1>
+
+    <div class="container">
+        <label class="upload-label" for="image-upload">Choose Image</label>
+        <input type="file" id="image-upload" accept="image/*" onchange="loadImage(event)">
+
+        <img id="preview-image" src="" alt="Your Image" style="display: none;">
+
+        <div id="sliders" style="display: none;">
+            <label>Sharpness</label>
+            <input type="range" class="slider" id="sharpness" min="0" max="5" step="0.1" value="1">
+            
+            <label>Contrast</label>
+            <input type="range" class="slider" id="contrast" min="0.5" max="3" step="0.1" value="1">
+            
+            <label>Color</label>
+            <input type="range" class="slider" id="color" min="0.5" max="3" step="0.1" value="1">
+        </div>
+
+        <button id="download-btn" style="display: none;" onclick="downloadImage()">Download Enhanced Image</button>
+    </div>
+
+    <script>
+        let imgElement = document.getElementById('preview-image');
+        let slidersElement = document.getElementById('sliders');
+        let downloadBtn = document.getElementById('download-btn');
+        let originalImage = null;  // Store the original image
+
+        // Load the selected image and show it in the preview
+        function loadImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                imgElement.src = reader.result;
+                imgElement.style.display = 'block';
+                slidersElement.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                originalImage = reader.result;  // Store the original image for further use
+                enhanceImage();  // Apply initial enhancement
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        // Function to enhance the image based on slider values
+        function enhanceImage() {
+            const sharpness = document.getElementById('sharpness').value;
+            console.log("Sharpness value: ", sharpness);  // Log sharpness value to check if it's sent correctly
+            const contrast = document.getElementById('contrast').value;
+            const color = document.getElementById('color').value;
+
+            fetch('/enhance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sharpness: sharpness,
+                    contrast: contrast,
+                    color: color,
+                    image: originalImage  // Send the original image in base64
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                imgElement.src = data.enhanced_image;  // Update the image with the enhanced version
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Add event listeners to sliders to trigger enhancement when values change
+        document.getElementById('sharpness').addEventListener('input', enhanceImage);
+        document.getElementById('contrast').addEventListener('input', enhanceImage);
+        document.getElementById('color').addEventListener('input', enhanceImage);
+
+        // Function to download the enhanced image
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.href = imgElement.src;
+            link.download = 'enhanced_image.png';
+            link.click();
+        }
+    </script>
+
+</body>
+</html>
